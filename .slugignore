@@ -1,0 +1,9 @@
+tests/
+docs/
+*.md
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.github/
+*.log
