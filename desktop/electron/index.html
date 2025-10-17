@@ -1,0 +1,765 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignBridge Desktop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+        }
+
+        .camera-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 4/3;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .detection-box {
+            width: 60%;
+            height: 60%;
+            border: 3px solid #28a745;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .detection-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .conversation-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .conversation-time {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .conversation-content {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .result-display {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-sign {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .result-confidence {
+            font-size: 1.2rem;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .result-description {
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #28a745;
+        }
+
+        .status-offline {
+            background: #dc3545;
+        }
+
+        .status-processing {
+            background: #ffc107;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .sign-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .sign-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .sign-name {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .sign-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .sign-confidence {
+            font-size: 12px;
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>ðŸ“Š Statistics</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Available Signs</span>
+                    <span class="stat-value" id="total-signs">66</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">AI Status</span>
+                    <span class="stat-value">
+                        <span class="status-indicator status-online"></span>
+                        <span id="ai-status">Active</span>
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Conversations</span>
+                    <span class="stat-value" id="conversation-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Accuracy</span>
+                    <span class="stat-value">95%</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>ðŸ’¬ Recent Conversations</h3>
+                <div id="conversation-history">
+                    <div class="conversation-item">
+                        <div class="conversation-time">System</div>
+                        <div class="conversation-content">Welcome to SignBridge Desktop!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>ðŸŽ›ï¸ Quick Actions</h3>
+                <button class="btn btn-secondary" onclick="showSigns()" style="width: 100%; margin-bottom: 10px;">
+                    View All Signs
+                </button>
+                <button class="btn btn-secondary" onclick="showStats()" style="width: 100%; margin-bottom: 10px;">
+                    Show Statistics
+                </button>
+                <button class="btn btn-secondary" onclick="clearHistory()" style="width: 100%; margin-bottom: 10px;">
+                    Clear History
+                </button>
+                <button class="btn btn-secondary" onclick="exportConversation()" style="width: 100%;">
+                    Export Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>ðŸ¤Ÿ SignBridge Desktop</h1>
+                <p>AI-Enhanced Communication Assistant - Cross-Platform Desktop Application</p>
+            </div>
+
+            <div class="camera-section">
+                <div class="camera-container">
+                    <video id="video" autoplay muted></video>
+                    <div class="camera-overlay">
+                        <div class="detection-box">
+                            <div class="detection-label">AI Detection Area</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="startCamera()">Start Camera</button>
+                    <button class="btn btn-success" onclick="captureAndRecognize()">Recognize Sign</button>
+                    <button class="btn btn-danger" onclick="stopCamera()">Stop Camera</button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing sign recognition...</p>
+                </div>
+
+                <div class="result-display" id="result-display" style="display: none;">
+                    <div class="result-sign" id="result-sign">Ready</div>
+                    <div class="result-confidence" id="result-confidence">Waiting for input...</div>
+                    <div class="result-description" id="result-description">Start camera and capture a sign to see results</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signs Modal -->
+    <div class="modal" id="signs-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Available Signs</h2>
+                <button class="modal-close" onclick="closeModal('signs-modal')">&times;</button>
+            </div>
+            <div class="sign-grid" id="signs-grid">
+                <!-- Signs will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal" id="stats-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Statistics</h2>
+                <button class="modal-close" onclick="closeModal('stats-modal')">&times;</button>
+            </div>
+            <div id="stats-content">
+                <!-- Statistics will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let video = document.getElementById('video');
+        let stream = null;
+        let conversationHistory = [];
+
+        // Available signs data
+        const signsData = [
+            { name: 'hello', description: 'Wave hand in greeting motion', confidence: 0.9 },
+            { name: 'yes', description: 'Make fist and nod up and down', confidence: 0.9 },
+            { name: 'no', description: 'Index finger shakes side to side', confidence: 0.85 },
+            { name: 'thank_you', description: 'Flat hand touches chin and moves forward', confidence: 0.85 },
+            { name: 'please', description: 'Flat hand circles on chest', confidence: 0.85 },
+            { name: 'sorry', description: 'Closed fist circles on chest', confidence: 0.8 },
+            { name: 'help', description: 'Closed fist taps on open palm', confidence: 0.85 },
+            { name: 'water', description: 'W handshape taps chin', confidence: 0.8 },
+            { name: 'food', description: 'Fingertips touch mouth', confidence: 0.85 },
+            { name: 'bathroom', description: 'T handshape shakes', confidence: 0.8 },
+            { name: 'love', description: 'Hands form heart shape', confidence: 0.9 },
+            { name: 'happy', description: 'Both hands move up with smile', confidence: 0.8 },
+            { name: 'sad', description: 'Hands move down with frown', confidence: 0.8 },
+            { name: 'angry', description: 'Fist shakes', confidence: 0.85 },
+            { name: 'surprised', description: 'Hands move up quickly', confidence: 0.8 },
+            { name: 'tired', description: 'Hands on face, eyes closed', confidence: 0.8 },
+            { name: 'hungry', description: 'Hand moves to mouth', confidence: 0.85 },
+            { name: 'thirsty', description: 'Hand moves to throat', confidence: 0.85 },
+            { name: 'emergency', description: 'Hand waves frantically', confidence: 0.9 },
+            { name: 'stop', description: 'Hand forms stop sign', confidence: 0.95 }
+        ];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAppInfo();
+            updateStatistics();
+        });
+
+        async function loadAppInfo() {
+            try {
+                const appInfo = await ipcRenderer.invoke('get-app-info');
+                console.log('App Info:', appInfo);
+            } catch (error) {
+                console.error('Error loading app info:', error);
+            }
+        }
+
+        async function startCamera() {
+            try {
+                const permission = await ipcRenderer.invoke('request-camera-permission');
+                
+                if (permission.success) {
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: 800, 
+                            height: 600,
+                            facingMode: 'user'
+                        } 
+                    });
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    addConversationEntry('system', 'Camera started successfully');
+                } else {
+                    addConversationEntry('system', 'Error: Could not access camera');
+                }
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                addConversationEntry('system', 'Error: Camera access denied');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                addConversationEntry('system', 'Camera stopped');
+            }
+        }
+
+        async function captureAndRecognize() {
+            if (!stream) {
+                addConversationEntry('system', 'Please start camera first');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                // Create canvas to capture frame
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                
+                // Convert to base64
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Send to main process for recognition
+                const result = await ipcRenderer.invoke('recognize-sign', imageData);
+                
+                if (result.success) {
+                    displayResult(result.result);
+                    addConversationEntry('user', Recognized:  (%));
+                } else {
+                    addConversationEntry('system', Error: );
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addConversationEntry('system', 'Error: Recognition failed');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResult(result) {
+            document.getElementById('result-sign').textContent = result.sign.toUpperCase();
+            document.getElementById('result-confidence').textContent = Confidence: %;
+            document.getElementById('result-description').textContent = result.description;
+            document.getElementById('result-display').style.display = 'block';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function addConversationEntry(type, content) {
+            const entry = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleTimeString(),
+                type: type,
+                content: content
+            };
+            
+            conversationHistory.unshift(entry);
+            
+            // Update UI
+            const historyContainer = document.getElementById('conversation-history');
+            const entryElement = document.createElement('div');
+            entryElement.className = 'conversation-item';
+            entryElement.innerHTML = 
+                <div class="conversation-time"></div>
+                <div class="conversation-content"></div>
+            ;
+            
+            historyContainer.insertBefore(entryElement, historyContainer.firstChild);
+            
+            // Keep only last 10 entries in UI
+            while (historyContainer.children.length > 10) {
+                historyContainer.removeChild(historyContainer.lastChild);
+            }
+            
+            // Update conversation count
+            document.getElementById('conversation-count').textContent = conversationHistory.length;
+        }
+
+        function updateStatistics() {
+            document.getElementById('total-signs').textContent = signsData.length;
+            document.getElementById('conversation-count').textContent = conversationHistory.length;
+        }
+
+        function showSigns() {
+            const modal = document.getElementById('signs-modal');
+            const grid = document.getElementById('signs-grid');
+            
+            grid.innerHTML = '';
+            signsData.forEach(sign => {
+                const card = document.createElement('div');
+                card.className = 'sign-card';
+                card.innerHTML = 
+                    <div class="sign-name"></div>
+                    <div class="sign-description"></div>
+                    <div class="sign-confidence">Confidence: %</div>
+                ;
+                grid.appendChild(card);
+            });
+            
+            modal.style.display = 'block';
+        }
+
+        function showStats() {
+            const modal = document.getElementById('stats-modal');
+            const content = document.getElementById('stats-content');
+            
+            content.innerHTML = 
+                <div class="stat-item">
+                    <span class="stat-label">Total Signs Available</span>
+                    <span class="stat-value"></span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">AI Model Status</span>
+                    <span class="stat-value">Active</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Conversation Entries</span>
+                    <span class="stat-value"></span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Target Accuracy</span>
+                    <span class="stat-value">95%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Platform</span>
+                    <span class="stat-value">Electron Desktop</span>
+                </div>
+            ;
+            
+            modal.style.display = 'block';
+        }
+
+        function clearHistory() {
+            conversationHistory = [];
+            document.getElementById('conversation-history').innerHTML = 
+                <div class="conversation-item">
+                    <div class="conversation-time">System</div>
+                    <div class="conversation-content">History cleared</div>
+                </div>
+            ;
+            document.getElementById('conversation-count').textContent = '0';
+        }
+
+        async function exportConversation() {
+            try {
+                const result = await ipcRenderer.invoke('save-conversation', conversationHistory);
+                
+                if (result.success) {
+                    addConversationEntry('system', Conversation exported to: );
+                } else {
+                    addConversationEntry('system', Export failed: );
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                addConversationEntry('system', 'Export failed');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Handle menu events from main process
+        ipcRenderer.on('menu-new-conversation', () => {
+            clearHistory();
+        });
+
+        ipcRenderer.on('menu-show-signs', () => {
+            showSigns();
+        });
+
+        ipcRenderer.on('menu-show-stats', () => {
+            showStats();
+        });
+
+        ipcRenderer.on('menu-save-conversation', () => {
+            exportConversation();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>
