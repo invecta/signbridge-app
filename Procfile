@@ -1,1 +1,2 @@
-web: gunicorn src.enterprise.api.enterprise_api:app --bind 0.0.0.0:$PORT
+web: python app.py
+worker: python hand_tracking_worker.py
